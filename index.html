@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Weekly Scheduler</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #172033;
+      --muted: #667085;
+      --border: #d9deea;
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --danger: #dc2626;
+      --success: #16a34a;
+      --calendar-hour-height: 52px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+    }
+
+    button {
+      border: none;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--primary);
+      color: white;
+    }
+
+    button:hover {
+      background: var(--primary-dark);
+    }
+
+    button.secondary {
+      background: #eef2ff;
+      color: var(--primary-dark);
+    }
+
+    button.secondary:hover {
+      background: #dfe4ff;
+    }
+
+    button.danger {
+      background: #fee2e2;
+      color: var(--danger);
+    }
+
+    button.danger:hover {
+      background: #fecaca;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 14px;
+      background: white;
+      color: var(--text);
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 700;
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .help-box {
+      background: #eef2ff;
+      border: 1px solid #c7d2fe;
+      color: #312e81;
+      border-radius: 14px;
+      padding: 14px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .calendar-shell {
+      overflow: auto;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+    }
+
+    .calendar {
+      min-width: 920px;
+      display: grid;
+      grid-template-columns: 76px repeat(7, 1fr);
+    }
+
+    .time-header, .day-header {
+      height: 48px;
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      background: #fafafa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      position: sticky;
+      top: 0;
+      z-index: 8;
+    }
+
+    .time-label {
+      height: var(--calendar-hour-height);
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 4px;
+      background: #fafafa;
+    }
+
+    .slot {
+      height: var(--calendar-hour-height);
+      border-bottom: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      position: relative;
+      background: white;
+      cursor: pointer;
+    }
+
+    .slot:hover {
+      background: #f8fafc;
+    }
+
+    .slot.busy {
+      background: #dbeafe;
+    }
+
+    .slot.task {
+      background: #dcfce7;
+    }
+
+    .slot.unavailable {
+      background: #f1f5f9;
+    }
+
+    .slot-label {
+      font-size: 11px;
+      padding: 4px;
+      color: #1e3a8a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-label {
+      color: #166534;
+      font-weight: 800;
+    }
+
+    .setup-toolbar, .home-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend span {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+      display: inline-block;
+      border: 1px solid var(--border);
+    }
+
+    .dot.busy { background: #dbeafe; }
+    .dot.task { background: #dcfce7; }
+    .dot.free { background: white; }
+
+    .floating-plus {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      font-size: 34px;
+      line-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 14px 30px rgba(79, 70, 229, 0.35);
+      z-index: 30;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 18px;
+      z-index: 40;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    .form-grid .full {
+      grid-column: 1 / -1;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .message {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .message.success {
+      background: #ecfdf5;
+      border-color: #bbf7d0;
+      color: #166534;
+    }
+
+    .message.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+
+    .task-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .task-item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fafafa;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .task-item strong {
+      display: block;
+    }
+
+    .task-item small {
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .setup-grid {
+        grid-template-columns: 1fr;
+      }
+
+      header {
+        align-items: flex-start;
+        gap: 12px;
+        flex-direction: column;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>Smart Weekly Scheduler</h1>
+      <p style="margin: 4px 0 0; color: var(--muted);">Enter your weekly schedule, then let the assistant place tasks into your best free times.</p>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="secondary" onclick="showSetup()">Edit Weekly Schedule</button>
+      <button class="danger" onclick="resetAll()">Reset</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="setupPage" class="setup-grid">
+      <div class="card">
+        <div class="setup-toolbar">
+          <div>
+            <h2>Step 1: Add your regular weekly schedule</h2>
+            <p style="margin: 6px 0 0; color: var(--muted);">Click or drag time blocks when you are busy: school, sports, work, sleep, commute, clubs, etc.</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="secondary" onclick="clearBusySchedule()">Clear</button>
+            <button onclick="saveScheduleAndGoHome()">Save Schedule</button>
+          </div>
+        </div>
+
+        <div class="legend" style="margin-bottom:12px;">
+          <span><i class="dot free"></i> Free</span>
+          <span><i class="dot busy"></i> Busy</span>
+        </div>
+
+        <div class="calendar-shell">
+          <div id="setupCalendar" class="calendar"></div>
+        </div>
+      </div>
+
+      <aside class="card">
+        <h3>How to use</h3>
+        <div class="help-box" style="margin-top:12px;">
+          <strong>Easy calendar entry:</strong><br />
+          Click any hour to mark it busy. Click again to remove it. You can also drag across blocks.
+        </div>
+        <div class="help-box" style="margin-top:12px; background:#fff7ed; border-color:#fed7aa; color:#9a3412;">
+          <strong>GitHub Pages note:</strong><br />
+          This file works as a static website. For a real ChatGPT API call, do not put your API key in this browser code. Use a backend or serverless function.
+        </div>
+      </aside>
+    </section>
+
+    <section id="homePage" class="hidden">
+      <div class="card">
+        <div class="home-toolbar">
+          <div>
+            <h2>Your Weekly Calendar</h2>
+            <p style="margin: 6px 0 0; color: var(--muted);">Blue = your fixed schedule. Green = AI-assigned tasks.</p>
+          </div>
+          <div class="legend">
+            <span><i class="dot free"></i> Free</span>
+            <span><i class="dot busy"></i> Busy</span>
+            <span><i class="dot task"></i> Task</span>
+          </div>
+        </div>
+        <div class="calendar-shell">
+          <div id="homeCalendar" class="calendar"></div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:18px;">
+        <h2>Assigned Tasks</h2>
+        <div id="taskList" class="task-list"></div>
+      </div>
+
+      <button class="floating-plus" onclick="openTaskModal()" title="Add task">+</button>
+    </section>
+  </main>
+
+  <div id="taskModal" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2>Add a Task</h2>
+      <p style="margin: 6px 0 0; color: var(--muted);">The app will find the best available time this week.</p>
+
+      <div class="form-grid">
+        <div class="full">
+          <label for="taskName">Task name</label>
+          <input id="taskName" placeholder="Example: Finish math project" />
+        </div>
+
+        <div>
+          <label for="duration">Time needed</label>
+          <select id="duration">
+            <option value="1">1 hour</option>
+            <option value="2">2 hours</option>
+            <option value="3">3 hours</option>
+            <option value="4">4 hours</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="priority">Priority</label>
+          <select id="priority">
+            <option value="high">High</option>
+            <option value="medium" selected>Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div class="full">
+          <label for="dueDate">Due date</label>
+          <input id="dueDate" type="date" />
+        </div>
+      </div>
+
+      <div id="taskMessage" class="message hidden"></div>
+
+      <div class="modal-actions">
+        <button class="secondary" onclick="closeTaskModal()">Cancel</button>
+        <button onclick="addTask()">Assign Task</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const startHour = 6;
+    const endHour = 23;
+
+    let isDragging = false;
+    let dragMode = null;
+
+    const state = loadState();
+
+    function loadState() {
+      const saved = localStorage.getItem("smartWeeklyScheduler");
+      if (saved) return JSON.parse(saved);
+
+      return {
+        busy: {},
+        tasks: [],
+        setupComplete: false
+      };
+    }
+
+    function saveState() {
+      localStorage.setItem("smartWeeklyScheduler", JSON.stringify(state));
+    }
+
+    function slotKey(dayIndex, hour) {
+      return `${dayIndex}-${hour}`;
+    }
+
+    function formatHour(hour) {
+      const suffix = hour >= 12 ? "PM" : "AM";
+      const h = hour % 12 || 12;
+      return `${h}:00 ${suffix}`;
+    }
+
+    function buildCalendar(containerId, mode) {
+      const calendar = document.getElementById(containerId);
+      calendar.innerHTML = "";
+
+      const empty = document.createElement("div");
+      empty.className = "time-header";
+      empty.textContent = "Time";
+      calendar.appendChild(empty);
+
+      days.forEach(day => {
+        const header = document.createElement("div");
+        header.className = "day-header";
+        header.textContent = day;
+        calendar.appendChild(header);
+      });
+
+      for (let hour = startHour; hour <= endHour; hour++) {
+        const timeLabel = document.createElement("div");
+        timeLabel.className = "time-label";
+        timeLabel.textContent = formatHour(hour);
+        calendar.appendChild(timeLabel);
+
+        days.forEach((day, dayIndex) => {
+          const slot = document.createElement("div");
+          const key = slotKey(dayIndex, hour);
+          slot.className = "slot";
+          slot.dataset.day = dayIndex;
+          slot.dataset.hour = hour;
+
+          const assignedTask = state.tasks.find(task => {
+            return task.dayIndex === dayIndex && hour >= task.startHour && hour < task.startHour + task.duration;
+          });
+
+          if (assignedTask) {
+            slot.classList.add("task");
+            if (hour === assignedTask.startHour) {
+              slot.innerHTML = `<div class="slot-label task-label">${escapeHtml(assignedTask.name)}</div>`;
+            }
+          } else if (state.busy[key]) {
+            slot.classList.add("busy");
+            slot.innerHTML = `<div class="slot-label">Busy</div>`;
+          }
+
+          if (mode === "setup") {
+            slot.addEventListener("mousedown", () => {
+              isDragging = true;
+              dragMode = !state.busy[key];
+              setBusy(dayIndex, hour, dragMode);
+            });
+
+            slot.addEventListener("mouseenter", () => {
+              if (isDragging) setBusy(dayIndex, hour, dragMode);
+            });
+
+            slot.addEventListener("click", () => {
+              if (!isDragging) setBusy(dayIndex, hour, !state.busy[key]);
+            });
+          }
+
+          calendar.appendChild(slot);
+        });
+      }
+    }
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+      dragMode = null;
+    });
+
+    function setBusy(dayIndex, hour, value) {
+      const key = slotKey(dayIndex, hour);
+      if (value) state.busy[key] = true;
+      else delete state.busy[key];
+      saveState();
+      buildCalendar("setupCalendar", "setup");
+    }
+
+    function clearBusySchedule() {
+      if (!confirm("Clear your weekly busy schedule?")) return;
+      state.busy = {};
+      state.tasks = [];
+      saveState();
+      buildCalendar("setupCalendar", "setup");
+    }
+
+    function saveScheduleAndGoHome() {
+      state.setupComplete = true;
+      saveState();
+      showHome();
+    }
+
+    function showSetup() {
+      document.getElementById("setupPage").classList.remove("hidden");
+      document.getElementById("homePage").classList.add("hidden");
+      buildCalendar("setupCalendar", "setup");
+    }
+
+    function showHome() {
+      document.getElementById("setupPage").classList.add("hidden");
+      document.getElementById("homePage").classList.remove("hidden");
+      buildCalendar("homeCalendar", "home");
+      renderTaskList();
+    }
+
+    function openTaskModal() {
+      document.getElementById("taskModal").classList.remove("hidden");
+      document.getElementById("taskMessage").classList.add("hidden");
+      document.getElementById("taskName").value = "";
+      document.getElementById("duration").value = "1";
+      document.getElementById("priority").value = "medium";
+      document.getElementById("dueDate").value = getTodayDateInput();
+    }
+
+    function closeTaskModal() {
+      document.getElementById("taskModal").classList.add("hidden");
+    }
+
+    function getTodayDateInput() {
+      const today = new Date();
+      return today.toISOString().split("T")[0];
+    }
+
+    async function addTask() {
+      const name = document.getElementById("taskName").value.trim();
+      const duration = Number(document.getElementById("duration").value);
+      const dueDate = document.getElementById("dueDate").value;
+      const priority = document.getElementById("priority").value;
+      const message = document.getElementById("taskMessage");
+
+      if (!name || !dueDate) {
+        showTaskMessage("Please enter a task name and due date.", "error");
+        return;
+      }
+
+      const taskInput = { name, duration, dueDate, priority };
+
+      // This static GitHub Pages version uses a smart local scheduler.
+      // To use real ChatGPT, replace this line with:
+      // const assignment = await askChatGPTForBestSlot(taskInput, state);
+      const assignment = await localSmartScheduler(taskInput, state);
+
+      if (!assignment) {
+        showTaskMessage("No available time was found before the due date. Try reducing the task duration or editing your weekly schedule.", "error");
+        return;
+      }
+
+      const task = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        name,
+        duration,
+        dueDate,
+        priority,
+        dayIndex: assignment.dayIndex,
+        startHour: assignment.startHour
+      };
+
+      state.tasks.push(task);
+      saveState();
+      showTaskMessage(`Assigned to ${days[task.dayIndex]} at ${formatHour(task.startHour)}.`, "success");
+
+      setTimeout(() => {
+        closeTaskModal();
+        showHome();
+      }, 700);
+    }
+
+    async function localSmartScheduler(taskInput, currentState) {
+      const dueDayIndex = getDueDayIndex(taskInput.dueDate);
+      const duration = taskInput.duration;
+      const priorityScore = { high: 3, medium: 2, low: 1 }[taskInput.priority] || 2;
+
+      const candidates = [];
+
+      for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+        if (dayIndex > dueDayIndex) continue;
+
+        for (let hour = startHour; hour <= endHour - duration + 1; hour++) {
+          if (isBlockFree(dayIndex, hour, duration, currentState)) {
+            const score = scoreSlot(dayIndex, hour, dueDayIndex, priorityScore);
+            candidates.push({ dayIndex, startHour: hour, score });
+          }
+        }
+      }
+
+      candidates.sort((a, b) => b.score - a.score);
+      return candidates[0] || null;
+    }
+
+    function getDueDayIndex(dateString) {
+      const date = new Date(dateString + "T12:00:00");
+      const jsDay = date.getDay();
+      return jsDay === 0 ? 6 : jsDay - 1;
+    }
+
+    function isBlockFree(dayIndex, start, duration, currentState) {
+      for (let hour = start; hour < start + duration; hour++) {
+        const key = slotKey(dayIndex, hour);
+        if (currentState.busy[key]) return false;
+
+        const overlappingTask = currentState.tasks.some(task => {
+          if (task.dayIndex !== dayIndex) return false;
+          const taskStart = task.startHour;
+          const taskEnd = task.startHour + task.duration;
+          return hour >= taskStart && hour < taskEnd;
+        });
+
+        if (overlappingTask) return false;
+      }
+      return true;
+    }
+
+    function scoreSlot(dayIndex, hour, dueDayIndex, priorityScore) {
+      let score = 0;
+
+      // Prefer earlier completion for high-priority work.
+      score += (7 - dayIndex) * priorityScore * 3;
+
+      // Prefer daytime/early evening over very early or very late hours.
+      if (hour >= 9 && hour <= 18) score += 20;
+      if (hour >= 19 && hour <= 21) score += 10;
+      if (hour < 8 || hour > 21) score -= 15;
+
+      // As due date gets closer, earlier slots before due date are better.
+      score += (dueDayIndex - dayIndex + 1) * 4;
+
+      return score;
+    }
+
+    /*
+      SAFE CHATGPT INTEGRATION IDEA
+      -----------------------------
+      Do NOT put an OpenAI API key directly inside GitHub Pages JavaScript.
+      Anyone can inspect browser code and steal the key.
+
+      Instead, create a serverless API endpoint using Netlify Functions,
+      Vercel Functions, Cloudflare Workers, or your own backend.
+
+      Then replace localSmartScheduler(...) with askChatGPTForBestSlot(...).
+
+      Example browser-side function:
+
+      async function askChatGPTForBestSlot(taskInput, currentState) {
+        const response = await fetch("/.netlify/functions/schedule-task", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskInput, schedule: currentState })
+        });
+
+        if (!response.ok) throw new Error("Scheduling failed");
+        return await response.json();
+      }
+
+      The serverless function should call the OpenAI API and return:
+      { "dayIndex": 2, "startHour": 16 }
+    */
+
+    function renderTaskList() {
+      const list = document.getElementById("taskList");
+      list.innerHTML = "";
+
+      if (state.tasks.length === 0) {
+        list.innerHTML = `<p style="color: var(--muted); margin: 0;">No tasks added yet. Press the + button to add one.</p>`;
+        return;
+      }
+
+      const sorted = [...state.tasks].sort((a, b) => {
+        if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+        return a.startHour - b.startHour;
+      });
+
+      sorted.forEach(task => {
+        const item = document.createElement("div");
+        item.className = "task-item";
+        item.innerHTML = `
+          <div>
+            <strong>${escapeHtml(task.name)}</strong>
+            <small>${days[task.dayIndex]} ${formatHour(task.startHour)} • ${task.duration} hour(s) • Due ${escapeHtml(task.dueDate)} • ${escapeHtml(task.priority)} priority</small>
+          </div>
+          <button class="danger" onclick="deleteTask('${task.id}')">Delete</button>
+        `;
+        list.appendChild(item);
+      });
+    }
+
+    function deleteTask(taskId) {
+      state.tasks = state.tasks.filter(task => task.id !== taskId);
+      saveState();
+      showHome();
+    }
+
+    function showTaskMessage(text, type) {
+      const message = document.getElementById("taskMessage");
+      message.textContent = text;
+      message.className = `message ${type}`;
+      message.classList.remove("hidden");
+    }
+
+    function resetAll() {
+      if (!confirm("Reset everything? This will remove your weekly schedule and tasks.")) return;
+      localStorage.removeItem("smartWeeklyScheduler");
+      location.reload();
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    if (state.setupComplete) showHome();
+    else showSetup();
+  </script>
+</body>
+</html>
