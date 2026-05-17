@@ -1,9 +1,6 @@
 {
   "name": "smart-weekly-scheduler",
   "version": "1.0.0",
-  "description": "A weekly scheduler that uses Gemini to assign tasks to the best available time.",
-  "type": "module",
-  "dependencies": {
-    "@google/genai": "^1.0.0"
-  }
+  "description": "A weekly scheduler that uses Gemini to assign tasks.",
+  "type": "module"
 }
