@@ -1,9 +1,3 @@
-import { GoogleGenAI } from "@google/genai";
-
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY
-});
-
 export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
@@ -18,7 +12,9 @@ export async function handler(event) {
       };
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
       return {
         statusCode: 500,
         headers: {
@@ -78,8 +74,6 @@ export async function handler(event) {
     const prompt = `
 You are a smart weekly scheduling assistant.
 
-The user has a weekly calendar and wants to schedule a task.
-
 Task:
 ${JSON.stringify(taskInput, null, 2)}
 
@@ -117,19 +111,50 @@ Return exactly this JSON shape:
 }
 `;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt
+    const geminiUrl =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
+      encodeURIComponent(apiKey);
+
+    const geminiResponse = await fetch(geminiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt
+              }
+            ]
+          }
+        ]
+      })
     });
 
-    const text = response.text;
+    const geminiText = await geminiResponse.text();
 
-    console.log("Gemini raw response:", text);
+    console.log("Gemini status:", geminiResponse.status);
+    console.log("Gemini raw response:", geminiText);
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!geminiResponse.ok) {
+      throw new Error("Gemini API error: " + geminiText);
+    }
+
+    const geminiData = JSON.parse(geminiText);
+
+    const modelText =
+      geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    if (!modelText) {
+      throw new Error("Gemini returned no text: " + geminiText);
+    }
+
+    const jsonMatch = modelText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
-      throw new Error("Gemini did not return JSON: " + text);
+      throw new Error("Gemini did not return JSON: " + modelText);
     }
 
     const result = JSON.parse(jsonMatch[0]);
@@ -152,7 +177,7 @@ Return exactly this JSON shape:
         body: JSON.stringify({
           dayIndex: backup.dayIndex,
           startHour: backup.startHour,
-          reason: "Gemini returned an invalid slot, so the best backup free slot was used."
+          reason: "Gemini returned an invalid slot, so the first available free slot was used."
         })
       };
     }
