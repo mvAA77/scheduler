@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Smart Weekly Scheduler</title>
+
   <style>
     :root {
       --bg: #f6f7fb;
@@ -14,7 +16,6 @@
       --primary: #4f46e5;
       --primary-dark: #3730a3;
       --danger: #dc2626;
-      --success: #16a34a;
       --calendar-hour-height: 52px;
     }
 
@@ -41,7 +42,9 @@
       z-index: 20;
     }
 
-    h1, h2, h3 {
+    h1,
+    h2,
+    h3 {
       margin: 0;
     }
 
@@ -81,7 +84,8 @@
       background: #fecaca;
     }
 
-    input, select, textarea {
+    input,
+    select {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 10px;
@@ -147,7 +151,8 @@
       grid-template-columns: 76px repeat(7, 1fr);
     }
 
-    .time-header, .day-header {
+    .time-header,
+    .day-header {
       height: 48px;
       border-bottom: 1px solid var(--border);
       border-right: 1px solid var(--border);
@@ -178,9 +183,9 @@
       height: var(--calendar-hour-height);
       border-bottom: 1px solid var(--border);
       border-right: 1px solid var(--border);
-      position: relative;
       background: white;
       cursor: pointer;
+      position: relative;
     }
 
     .slot:hover {
@@ -195,25 +200,25 @@
       background: #dcfce7;
     }
 
-    .slot.unavailable {
-      background: #f1f5f9;
-    }
-
     .slot-label {
       font-size: 11px;
       padding: 4px;
-      color: #1e3a8a;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .task-label {
+    .busy .slot-label {
+      color: #1e3a8a;
+    }
+
+    .task .slot-label {
       color: #166534;
       font-weight: 800;
     }
 
-    .setup-toolbar, .home-toolbar {
+    .setup-toolbar,
+    .home-toolbar {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
@@ -244,9 +249,17 @@
       border: 1px solid var(--border);
     }
 
-    .dot.busy { background: #dbeafe; }
-    .dot.task { background: #dcfce7; }
-    .dot.free { background: white; }
+    .dot.busy {
+      background: #dbeafe;
+    }
+
+    .dot.task {
+      background: #dcfce7;
+    }
+
+    .dot.free {
+      background: white;
+    }
 
     .floating-plus {
       position: fixed;
@@ -310,6 +323,7 @@
       border: 1px solid var(--border);
       color: var(--muted);
       line-height: 1.5;
+      font-size: 14px;
     }
 
     .message.success {
@@ -366,12 +380,16 @@
     }
   </style>
 </head>
+
 <body>
   <header>
     <div>
       <h1>Smart Weekly Scheduler</h1>
-      <p style="margin: 4px 0 0; color: var(--muted);">Enter your weekly schedule, then let the assistant place tasks into your best free times.</p>
+      <p style="margin: 4px 0 0; color: var(--muted);">
+        Enter your weekly schedule, then let Gemini place tasks into your best free times.
+      </p>
     </div>
+
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
       <button class="secondary" onclick="showSetup()">Edit Weekly Schedule</button>
       <button class="danger" onclick="resetAll()">Reset</button>
@@ -384,8 +402,11 @@
         <div class="setup-toolbar">
           <div>
             <h2>Step 1: Add your regular weekly schedule</h2>
-            <p style="margin: 6px 0 0; color: var(--muted);">Click or drag time blocks when you are busy: school, sports, work, sleep, commute, clubs, etc.</p>
+            <p style="margin: 6px 0 0; color: var(--muted);">
+              Click or drag time blocks when you are busy: school, sports, work, sleep, commute, clubs, etc.
+            </p>
           </div>
+
           <div style="display:flex; gap:10px;">
             <button class="secondary" onclick="clearBusySchedule()">Clear</button>
             <button onclick="saveScheduleAndGoHome()">Save Schedule</button>
@@ -404,13 +425,15 @@
 
       <aside class="card">
         <h3>How to use</h3>
+
         <div class="help-box" style="margin-top:12px;">
-          <strong>Easy calendar entry:</strong><br />
-          Click any hour to mark it busy. Click again to remove it. You can also drag across blocks.
+          <strong>Calendar input:</strong><br />
+          Click any hour to mark it busy. Click again or drag over blocks to edit your weekly schedule.
         </div>
+
         <div class="help-box" style="margin-top:12px; background:#fff7ed; border-color:#fed7aa; color:#9a3412;">
-          <strong>GitHub Pages note:</strong><br />
-          This file works as a static website. For a real ChatGPT API call, do not put your API key in this browser code. Use a backend or serverless function.
+          <strong>Important:</strong><br />
+          Your Gemini API key must stay in Netlify environment variables. Never paste it inside this HTML file.
         </div>
       </aside>
     </section>
@@ -420,14 +443,18 @@
         <div class="home-toolbar">
           <div>
             <h2>Your Weekly Calendar</h2>
-            <p style="margin: 6px 0 0; color: var(--muted);">Blue = your fixed schedule. Green = AI-assigned tasks.</p>
+            <p style="margin: 6px 0 0; color: var(--muted);">
+              Blue = fixed schedule. Green = Gemini-assigned tasks.
+            </p>
           </div>
+
           <div class="legend">
             <span><i class="dot free"></i> Free</span>
             <span><i class="dot busy"></i> Busy</span>
             <span><i class="dot task"></i> Task</span>
           </div>
         </div>
+
         <div class="calendar-shell">
           <div id="homeCalendar" class="calendar"></div>
         </div>
@@ -445,7 +472,9 @@
   <div id="taskModal" class="modal-backdrop hidden">
     <div class="modal">
       <h2>Add a Task</h2>
-      <p style="margin: 6px 0 0; color: var(--muted);">The app will find the best available time this week.</p>
+      <p style="margin: 6px 0 0; color: var(--muted);">
+        Gemini will find the best available time this week.
+      </p>
 
       <div class="form-grid">
         <div class="full">
@@ -499,7 +528,10 @@
 
     function loadState() {
       const saved = localStorage.getItem("smartWeeklyScheduler");
-      if (saved) return JSON.parse(saved);
+
+      if (saved) {
+        return JSON.parse(saved);
+      }
 
       return {
         busy: {},
@@ -547,18 +579,24 @@
         days.forEach((day, dayIndex) => {
           const slot = document.createElement("div");
           const key = slotKey(dayIndex, hour);
+
           slot.className = "slot";
           slot.dataset.day = dayIndex;
           slot.dataset.hour = hour;
 
           const assignedTask = state.tasks.find(task => {
-            return task.dayIndex === dayIndex && hour >= task.startHour && hour < task.startHour + task.duration;
+            return (
+              task.dayIndex === dayIndex &&
+              hour >= task.startHour &&
+              hour < task.startHour + task.duration
+            );
           });
 
           if (assignedTask) {
             slot.classList.add("task");
+
             if (hour === assignedTask.startHour) {
-              slot.innerHTML = `<div class="slot-label task-label">${escapeHtml(assignedTask.name)}</div>`;
+              slot.innerHTML = `<div class="slot-label">${escapeHtml(assignedTask.name)}</div>`;
             }
           } else if (state.busy[key]) {
             slot.classList.add("busy");
@@ -573,11 +611,9 @@
             });
 
             slot.addEventListener("mouseenter", () => {
-              if (isDragging) setBusy(dayIndex, hour, dragMode);
-            });
-
-            slot.addEventListener("click", () => {
-              if (!isDragging) setBusy(dayIndex, hour, !state.busy[key]);
+              if (isDragging) {
+                setBusy(dayIndex, hour, dragMode);
+              }
             });
           }
 
@@ -593,14 +629,20 @@
 
     function setBusy(dayIndex, hour, value) {
       const key = slotKey(dayIndex, hour);
-      if (value) state.busy[key] = true;
-      else delete state.busy[key];
+
+      if (value) {
+        state.busy[key] = true;
+      } else {
+        delete state.busy[key];
+      }
+
       saveState();
       buildCalendar("setupCalendar", "setup");
     }
 
     function clearBusySchedule() {
       if (!confirm("Clear your weekly busy schedule?")) return;
+
       state.busy = {};
       state.tasks = [];
       saveState();
@@ -629,6 +671,7 @@
     function openTaskModal() {
       document.getElementById("taskModal").classList.remove("hidden");
       document.getElementById("taskMessage").classList.add("hidden");
+
       document.getElementById("taskName").value = "";
       document.getElementById("duration").value = "1";
       document.getElementById("priority").value = "medium";
@@ -649,22 +692,36 @@
       const duration = Number(document.getElementById("duration").value);
       const dueDate = document.getElementById("dueDate").value;
       const priority = document.getElementById("priority").value;
-      const message = document.getElementById("taskMessage");
 
       if (!name || !dueDate) {
         showTaskMessage("Please enter a task name and due date.", "error");
         return;
       }
 
-      const taskInput = { name, duration, dueDate, priority };
+      showTaskMessage("Asking Gemini to find the best time...", "");
 
-      // This static GitHub Pages version uses a smart local scheduler.
-      // To use real ChatGPT, replace this line with:
-      // const assignment = await askChatGPTForBestSlot(taskInput, state);
-      const assignment = await localSmartScheduler(taskInput, state);
+      const taskInput = {
+        name,
+        duration,
+        dueDate,
+        priority
+      };
+
+      let assignment;
+
+      try {
+        assignment = await askGeminiForBestSlot(taskInput, state);
+      } catch (error) {
+        console.error("Gemini failed. Using local scheduler instead.", error);
+
+        assignment = await localSmartScheduler(taskInput, state);
+      }
 
       if (!assignment) {
-        showTaskMessage("No available time was found before the due date. Try reducing the task duration or editing your weekly schedule.", "error");
+        showTaskMessage(
+          "No available time was found before the due date. Try reducing the task duration or editing your weekly schedule.",
+          "error"
+        );
         return;
       }
 
@@ -675,23 +732,60 @@
         dueDate,
         priority,
         dayIndex: assignment.dayIndex,
-        startHour: assignment.startHour
+        startHour: assignment.startHour,
+        reason: assignment.reason || "Scheduled automatically"
       };
 
       state.tasks.push(task);
       saveState();
-      showTaskMessage(`Assigned to ${days[task.dayIndex]} at ${formatHour(task.startHour)}.`, "success");
+
+      showTaskMessage(
+        `Assigned to ${days[task.dayIndex]} at ${formatHour(task.startHour)}. ${task.reason}`,
+        "success"
+      );
 
       setTimeout(() => {
         closeTaskModal();
         showHome();
-      }, 700);
+      }, 1000);
+    }
+
+    async function askGeminiForBestSlot(taskInput, currentState) {
+      const response = await fetch("/.netlify/functions/schedule-task", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          taskInput,
+          schedule: currentState,
+          days,
+          startHour,
+          endHour
+        })
+      });
+
+      const text = await response.text();
+
+      console.log("Gemini function status:", response.status);
+      console.log("Gemini function response:", text);
+
+      if (!response.ok) {
+        throw new Error("Gemini scheduling failed: " + text);
+      }
+
+      return JSON.parse(text);
     }
 
     async function localSmartScheduler(taskInput, currentState) {
       const dueDayIndex = getDueDayIndex(taskInput.dueDate);
       const duration = taskInput.duration;
-      const priorityScore = { high: 3, medium: 2, low: 1 }[taskInput.priority] || 2;
+
+      const priorityScore = {
+        high: 3,
+        medium: 2,
+        low: 1
+      }[taskInput.priority] || 2;
 
       const candidates = [];
 
@@ -701,107 +795,119 @@
         for (let hour = startHour; hour <= endHour - duration + 1; hour++) {
           if (isBlockFree(dayIndex, hour, duration, currentState)) {
             const score = scoreSlot(dayIndex, hour, dueDayIndex, priorityScore);
-            candidates.push({ dayIndex, startHour: hour, score });
+
+            candidates.push({
+              dayIndex,
+              startHour: hour,
+              score,
+              reason: "Gemini was unavailable, so the local backup scheduler selected this time."
+            });
           }
         }
       }
 
       candidates.sort((a, b) => b.score - a.score);
+
       return candidates[0] || null;
     }
 
     function getDueDayIndex(dateString) {
       const date = new Date(dateString + "T12:00:00");
       const jsDay = date.getDay();
+
       return jsDay === 0 ? 6 : jsDay - 1;
     }
 
     function isBlockFree(dayIndex, start, duration, currentState) {
       for (let hour = start; hour < start + duration; hour++) {
         const key = slotKey(dayIndex, hour);
-        if (currentState.busy[key]) return false;
+
+        if (currentState.busy[key]) {
+          return false;
+        }
 
         const overlappingTask = currentState.tasks.some(task => {
           if (task.dayIndex !== dayIndex) return false;
+
           const taskStart = task.startHour;
           const taskEnd = task.startHour + task.duration;
+
           return hour >= taskStart && hour < taskEnd;
         });
 
-        if (overlappingTask) return false;
+        if (overlappingTask) {
+          return false;
+        }
       }
+
       return true;
     }
 
     function scoreSlot(dayIndex, hour, dueDayIndex, priorityScore) {
       let score = 0;
 
-      // Prefer earlier completion for high-priority work.
       score += (7 - dayIndex) * priorityScore * 3;
 
-      // Prefer daytime/early evening over very early or very late hours.
-      if (hour >= 9 && hour <= 18) score += 20;
-      if (hour >= 19 && hour <= 21) score += 10;
-      if (hour < 8 || hour > 21) score -= 15;
+      if (hour >= 9 && hour <= 18) {
+        score += 20;
+      }
 
-      // As due date gets closer, earlier slots before due date are better.
+      if (hour >= 19 && hour <= 21) {
+        score += 10;
+      }
+
+      if (hour < 8 || hour > 21) {
+        score -= 15;
+      }
+
       score += (dueDayIndex - dayIndex + 1) * 4;
 
       return score;
     }
-
-    /*
-      SAFE CHATGPT INTEGRATION IDEA
-      -----------------------------
-      Do NOT put an OpenAI API key directly inside GitHub Pages JavaScript.
-      Anyone can inspect browser code and steal the key.
-
-      Instead, create a serverless API endpoint using Netlify Functions,
-      Vercel Functions, Cloudflare Workers, or your own backend.
-
-      Then replace localSmartScheduler(...) with askChatGPTForBestSlot(...).
-
-      Example browser-side function:
-
-      async function askChatGPTForBestSlot(taskInput, currentState) {
-        const response = await fetch("/.netlify/functions/schedule-task", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ taskInput, schedule: currentState })
-        });
-
-        if (!response.ok) throw new Error("Scheduling failed");
-        return await response.json();
-      }
-
-      The serverless function should call the OpenAI API and return:
-      { "dayIndex": 2, "startHour": 16 }
-    */
 
     function renderTaskList() {
       const list = document.getElementById("taskList");
       list.innerHTML = "";
 
       if (state.tasks.length === 0) {
-        list.innerHTML = `<p style="color: var(--muted); margin: 0;">No tasks added yet. Press the + button to add one.</p>`;
+        list.innerHTML = `
+          <p style="color: var(--muted); margin: 0;">
+            No tasks added yet. Press the + button to add one.
+          </p>
+        `;
         return;
       }
 
       const sorted = [...state.tasks].sort((a, b) => {
-        if (a.dayIndex !== b.dayIndex) return a.dayIndex - b.dayIndex;
+        if (a.dayIndex !== b.dayIndex) {
+          return a.dayIndex - b.dayIndex;
+        }
+
         return a.startHour - b.startHour;
       });
 
       sorted.forEach(task => {
         const item = document.createElement("div");
         item.className = "task-item";
+
         item.innerHTML = `
           <div>
             <strong>${escapeHtml(task.name)}</strong>
-            <small>${days[task.dayIndex]} ${formatHour(task.startHour)} • ${task.duration} hour(s) • Due ${escapeHtml(task.dueDate)} • ${escapeHtml(task.priority)} priority</small>
+            <small>
+              ${days[task.dayIndex]} ${formatHour(task.startHour)}
+              • ${task.duration} hour(s)
+              • Due ${escapeHtml(task.dueDate)}
+              • ${escapeHtml(task.priority)} priority
+              <br />
+              ${escapeHtml(task.reason || "")}
+            </small>
           </div>
-          <button class="danger" onclick="deleteTask('${task.id}')">Delete</button>
+
+          <button class="danger" onclick="deleteTask('${task.id}')">
+            Delete
+          </button>
         `;
+
         list.appendChild(item);
       });
     }
@@ -814,13 +920,15 @@
 
     function showTaskMessage(text, type) {
       const message = document.getElementById("taskMessage");
+
       message.textContent = text;
-      message.className = `message ${type}`;
+      message.className = type ? `message ${type}` : "message";
       message.classList.remove("hidden");
     }
 
     function resetAll() {
       if (!confirm("Reset everything? This will remove your weekly schedule and tasks.")) return;
+
       localStorage.removeItem("smartWeeklyScheduler");
       location.reload();
     }
@@ -834,8 +942,11 @@
         .replaceAll("'", "&#039;");
     }
 
-    if (state.setupComplete) showHome();
-    else showSetup();
+    if (state.setupComplete) {
+      showHome();
+    } else {
+      showSetup();
+    }
   </script>
 </body>
 </html>
