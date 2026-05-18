@@ -709,13 +709,18 @@
 
       let assignment;
 
-      try {
-        assignment = await askGeminiForBestSlot(taskInput, state);
-      } catch (error) {
-        console.error("Gemini failed. Using local scheduler instead.", error);
+     try {
+  assignment = await askGeminiForBestSlot(taskInput, state);
+} catch (error) {
+  console.error("Gemini failed:", error);
 
-        assignment = await localSmartScheduler(taskInput, state);
-      }
+  showTaskMessage(
+    "Gemini failed: " + error.message,
+    "error"
+  );
+
+  return;
+}
 
       if (!assignment) {
         showTaskMessage(
