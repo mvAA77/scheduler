@@ -112,8 +112,7 @@ Return exactly this JSON shape:
 `;
 
     const geminiUrl =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" +
-      encodeURIComponent(apiKey);
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
     const geminiResponse = await fetch(geminiUrl, {
       method: "POST",
