@@ -115,22 +115,23 @@ Return exactly this JSON shape:
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
     const geminiResponse = await fetch(geminiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        contents: [
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "x-goog-api-key": apiKey
+  },
+  body: JSON.stringify({
+    contents: [
+      {
+        parts: [
           {
-            parts: [
-              {
-                text: prompt
-              }
-            ]
+            text: prompt
           }
         ]
-      })
-    });
+      }
+    ]
+  })
+});
 
     const geminiText = await geminiResponse.text();
 
